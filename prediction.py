@@ -1,58 +1,59 @@
 import numpy as np
 import pandas as pd
 
-def delay_bracket(x):
-    brackets = {0:0,1:1,2:2}
-    return brackets[np.floor(x/30) if np.floor(x/10) > 2 else 2]
 
-def debt_bracket(x):
-    if x <=1000:
-        return 0
-    elif x <=2500:
-        return 1
-    else:
-        return 2
-
-def credit_history_bracket(x):   
-    brackets = {0:2,1:1,2:0}
-    return brackets[np.floor(x/10) if np.floor(x/10) <= 2 else 2]
+def monthly_salary_bracket(x):
+    brackets = lambda n: {-np.inf<n<1822: 50, 1822<=n<6711: 20, 6711<=n<np.inf: 0}
+    return brackets(x)[1]
 
 def credit_card_bracket(x):
-    if x <=4:
-        return 0
-    elif x <=7:
-        return 1
-    else:
-        return 2
+    brackets = lambda n: {-np.inf<n<=1: 30, 1<n<4: 0, 4<=n<7: 20, 7<=n<np.inf: 50}
+    return brackets(x)[1]
+
 def num_loan_bracket(x):
-    if x <=2:
-        return 0
-    elif x <=5:
-        return 1
-    else:
-        return 2
-    
-def bracketed_data(df: pd.DataFrame):
-    functions = {0:delay_bracket,1:debt_bracket,2:credit_history_bracket,3:credit_card_bracket,4:num_loan_bracket}
-    for i in range(len(df.columns)-1):
-        df[df.columns[i]] = df[df.columns[i]].apply(functions[i])
+    brackets = lambda n: {-np.inf<n<2: 0, 2<=n<=4: 20, 4<n<np.inf: 50}
+    return brackets(x)[1]
+
+def delay_bracket(x):
+    brackets = lambda n: {-np.inf<n<11: 0, 11<=n<30: 20, 30<=n<np.inf: 50}
+    return brackets(x)[1]
+
+def num_delay_bracket(x):
+    brackets = lambda n: {-np.inf<n<8: 0, 8<=n<17: 20, 17<=n<np.inf: 50}
+    return brackets(x)[1]
+
+def credit_inqueries_bracket(x):
+    brackets = lambda n: {-np.inf<n<3: 0, 3<=n<10: 20, 10<=n<np.inf: 50}
+    return brackets(x)[1]
+
+def debt_bracket(x):
+    brackets = lambda n: {-np.inf<n<1000: 0, 1000<=n<2500: 1, 2500<=n<np.inf: 2}
+    return brackets(x)[1]
+
+def credit_utilization_bracket(x):
+    brackets = lambda n: {-np.inf<n<28: 0, 28<=n<36: 20, 36<=n<np.inf: 50}
+    return brackets(x)[1]
+
+def credit_history_bracket(x):   
+    brackets = lambda n: {-np.inf<n<13: 50, 13<=n<26: 20, 26<=n<np.inf: 0}
+    return brackets(x)[1]
+
+def monthly_balance_bracket(x):
+    brackets = lambda n: {-np.inf<n<4: 0, 4<=n<7: 20, 7<=n<np.inf: 50}
+    return brackets(x)[1]
+
+def setScore(df: pd.DataFrame) -> pd.DataFrame:
+    df['MIS_penalty'] = df['Monthly_Inhand_Salary'].apply(monthly_salary_bracket)
+    df['NCC_penalty'] = df['Num_Credit_Card'].apply(credit_card_bracket)
+    df['NoL_penalty'] = df['Num_of_Loan'].apply(num_loan_bracket)
+    df['Delay_penalty'] = df['Delay_from_due_date'].apply(delay_bracket)
+    df['NDP_penalty'] = df['Num_of_Delayed_Payment'].apply(num_delay_bracket)
+    df['NCI_penalty'] = df['Num_Credit_Inquiries'].apply(credit_inqueries_bracket)
+    df['Debt_penalty'] = df['Outstanding_Debt'].apply(debt_bracket)
+    df['CUR_penalty'] = df['Credit_Utilization_Ratio'].apply(credit_utilization_bracket)
+    df['CHA_penalty'] = df['Credit_History_Age'].apply(credit_history_bracket)
+    df['MB_penalty'] = df['Monthly_Balance'].apply(monthly_balance_bracket)
+    df['Total_penalty'] = df[['MIS_penalty', 'NCC_penalty', 'NoL_penalty', 'Delay_penalty', 'NDP_penalty', 'NCI_penalty', 'Debt_penalty', 'CUR_penalty', 'CHA_penalty', 'MB_penalty']].sum(axis=1)
+    df['Score_Predicted_in_points'] = 1000-df['Total_penalty']
     return df
 
-def credit_score_function(weights):
-    #W = np.array([weights for i in range(len(bracketed))])
-    X = bracketed[bracketed.columns[:-1]].values
-    score = 900 - (weights * X).sum(axis = 1)
-    score = pd.Series(score, name = 'Predicted').apply(lambda x: {0:1,1:2,2:3}[np.floor(x/300) if np.floor(x/300) <= 2 else 2] ).to_frame()
-    score['Real'] = bracketed.reset_index()['Score']
-    score['Error'] = (score['Real'] - score['Predicted']).apply(lambda x: x**2)
-    error = score['Error'].sum()
-    return error
-
-def accuracy(weights):
-    #W = np.array([weights for i in range(len(bracketed))])
-    X = bracketed[bracketed.columns[:-1]].values
-    score = 900 - (weights * X).sum(axis = 1)
-    score = pd.Series(score, name = 'Predicted').apply(lambda x: {0:1,1:2,2:3}[np.floor(x/300) if np.floor(x/300) <= 2 else 2] ).to_frame()
-    score['Real'] = bracketed.reset_index()['Score']
-    score['Count'] = (score['Real'] - score['Predicted']).apply(lambda x: 0 if x!=0 else 1)
-    return f"{round(score['Count'].sum()/len(score)*100,2)}%"
