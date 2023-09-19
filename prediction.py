@@ -70,11 +70,12 @@ def monthly_balance_bracket(x):
         return brackets(x)['True']
 
 def score_predicted_in_bracket(x):
-    brackets = lambda n: {-np.inf<n<688: 1, 688<=n<768: 2, 768<=n<np.inf: 3}
-    try:
-        return brackets(x)[0]
-    except:
-        return brackets(x)['True']
+    if x < 708:
+        return 1
+    elif 708 <= x < 798:
+        return 2
+    else:
+        return 3
 
 def setScore(df: pd.DataFrame) -> pd.DataFrame:
     df['MIS_penalty'] = df['Monthly_Inhand_Salary'].apply(monthly_salary_bracket)
