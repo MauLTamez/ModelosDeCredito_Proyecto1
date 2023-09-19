@@ -26,8 +26,8 @@ def credit_score_function(weights):
 def accuracy(weights):
     #W = np.array([weights for i in range(len(bracketed))])
     X = bracketed[bracketed.columns[:-1]].values
-    score = 900 - (weights * X).sum(axis = 1)
-    score = pd.Series(score, name = 'Predicted').apply(lambda x: {0:1,1:2,2:3}[np.floor(x/300) if np.floor(x/300) <= 2 else 2] ).to_frame()
+    score = 9 - (weights * X).sum(axis = 1)
+    score = pd.Series(score, name = 'Predicted').apply(lambda x: {0:1,1:2,2:3}[np.floor(x/3) if np.floor(x/3) <= 2 else 2] ).to_frame()
     score['Real'] = bracketed.reset_index()['Score']
     score['Count'] = (score['Real'] - score['Predicted']).apply(lambda x: 0 if x!=0 else 1)
     return f"{round(score['Count'].sum()/len(score)*100,2)}%"
@@ -36,9 +36,9 @@ def accuracy(weights):
 # PSO Parameters
 swarm_size = len(bracketed)
 dim = 5
-options = {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
-constraints = (0, 200)
-weights = 50 * np.ones((swarm_size, dim))  # Ensure the correct shape
+options = {'c1': .3, 'c2': .5, 'w': 0.5}
+constraints = (0, 2)
+weights = .9 * np.ones((swarm_size, dim))  # Ensure the correct shape
 
 # Call an instance of PSO
 optimizer = ps.single.GlobalBestPSO(n_particles=swarm_size,
@@ -48,7 +48,7 @@ optimizer = ps.single.GlobalBestPSO(n_particles=swarm_size,
                                     init_pos=weights)
 
 # Perform optimization
-cost, joint_vars = optimizer.optimize(credit_score_function, iters=1000)
+cost, joint_vars = optimizer.optimize(credit_score_function, iters=5000)
 cost_history = optimizer.cost_history
 
 plot_cost_history(cost_history)
